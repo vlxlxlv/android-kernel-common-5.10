@@ -1786,7 +1786,7 @@ void thaw_secondary_cpus(void)
 			pr_info("CPU%d is up\n", cpu);
 			cpu_device = get_cpu_device(cpu);
 			if (!cpu_device)
-				pr_err("%s: failed to get cpu%d device\n",
+				pr_debug("%s: failed to get cpu%d device\n",
 				       __func__, cpu);
 			else
 				kobject_uevent(&cpu_device->kobj, KOBJ_ONLINE);
