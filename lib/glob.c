@@ -130,7 +130,7 @@ static bool __pure glob_match_str(char const *pat, char const *str,
 			break;
 		case '\\':
 			d = *pat++;
-			/* fall through */
+			fallthrough;
 		default:	/* Literal character */
 literal:
 			if (c == d) {
