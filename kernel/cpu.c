@@ -1734,7 +1734,7 @@ int freeze_secondary_cpus(int primary)
 		if (!error)
 			cpumask_set_cpu(cpu, frozen_cpus);
 		else {
-			pr_err("Error taking CPU%d down: %d\n", cpu, error);
+			pr_debug("Error taking CPU%d down: %d\n", cpu, error);
 			break;
 		}
 	}
