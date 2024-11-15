@@ -22,7 +22,7 @@ static const char *task_name[] = {
 	"ion.XOSLauncher", // com.transsion.XOSLauncher
 	"sion.hilauncher", // com.transsion.hilauncher
 	"ndroid.systemui",  // com.android.systemui
-	"surfaceflinger",
+	// "surfaceflinger",
 	"cameraserver",
 	"rsonalassistant",  // com.miui.personalassistant
 };
