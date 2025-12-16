@@ -65,7 +65,9 @@ UTS_VERSION="$(echo $UTS_VERSION $CONFIG_FLAGS $TIMESTAMP | cut -b -$UTS_LEN)"
   CC_VERSION=$(echo $CC_VERSION | perl -pe 's/\(http.*?\)//gs' \
 				| sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
   LD_VERSION=$($LD -v | head -n1 | sed 's/(compatible with [^)]*)//' \
-		      | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+		      | perl -pe 's/\(http.*?\)//gs' \
+		      | perl -pe 's/\(\/mnt\/disks[^)]*\)//gs' \
+		      | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
   printf '#define LINUX_COMPILER "%s"\n' "$CC_VERSION, $LD_VERSION"
 } > .tmpcompile
 
