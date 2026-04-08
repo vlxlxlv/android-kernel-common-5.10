@@ -42,6 +42,7 @@ android/abi_gki_aarch64_tuxera
 
 FILES="${FILES}
 arch/arm64/boot/Image.lz4
+arch/arm64/boot/Image.gz
 "
 
 TRIM_NONLISTED_KMI=${TRIM_NONLISTED_KMI:-1}
