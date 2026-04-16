@@ -306,7 +306,7 @@ static int create_image(int platform_mode)
 	if (error || hibernation_test(TEST_PLATFORM))
 		goto Platform_finish;
 
-	error = pm_sleep_disable_secondary_cpus();
+	error = suspend_disable_secondary_cpus();
 	if (error || hibernation_test(TEST_CPUS))
 		goto Enable_cpus;
 
@@ -348,7 +348,7 @@ static int create_image(int platform_mode)
 	local_irq_enable();
 
  Enable_cpus:
-	pm_sleep_enable_secondary_cpus();
+	suspend_enable_secondary_cpus();
 
 	/* Allow architectures to do nosmt-specific post-resume dances */
 	if (!in_suspend)
@@ -472,8 +472,6 @@ static int resume_target_kernel(bool platform_mode)
 	if (error)
 		goto Cleanup;
 
-	cpuidle_pause();
-
 	error = hibernate_resume_nonboot_cpu_disable();
 	if (error)
 		goto Enable_cpus;
@@ -517,7 +515,7 @@ static int resume_target_kernel(bool platform_mode)
 	local_irq_enable();
 
  Enable_cpus:
-	pm_sleep_enable_secondary_cpus();
+	suspend_enable_secondary_cpus();
 
  Cleanup:
 	platform_restore_cleanup(platform_mode);
@@ -595,7 +593,7 @@ int hibernation_platform_enter(void)
 	if (error)
 		goto Platform_finish;
 
-	error = pm_sleep_disable_secondary_cpus();
+	error = suspend_disable_secondary_cpus();
 	if (error)
 		goto Enable_cpus;
 
@@ -622,7 +620,7 @@ int hibernation_platform_enter(void)
 	local_irq_enable();
 
  Enable_cpus:
-	pm_sleep_enable_secondary_cpus();
+	suspend_enable_secondary_cpus();
 
  Platform_finish:
 	hibernation_ops->finish();
