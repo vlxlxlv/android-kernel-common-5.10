@@ -65,7 +65,6 @@ void tcp_rate_skb_sent(struct sock *sk, struct sk_buff *skb)
 	TCP_SKB_CB(skb)->tx.first_tx_mstamp	= tp->first_tx_mstamp;
 	TCP_SKB_CB(skb)->tx.delivered_mstamp	= tp->delivered_mstamp;
 	TCP_SKB_CB(skb)->tx.delivered		= tp->delivered;
-	TCP_SKB_CB(skb)->tx.delivered_ce	= tp->delivered_ce;
 	TCP_SKB_CB(skb)->tx.is_app_limited	= tp->app_limited ? 1 : 0;
 }
 
@@ -87,7 +86,6 @@ void tcp_rate_skb_delivered(struct sock *sk, struct sk_buff *skb,
 
 	if (!rs->prior_delivered ||
 	    after(scb->tx.delivered, rs->prior_delivered)) {
-		rs->prior_delivered_ce  = scb->tx.delivered_ce;
 		rs->prior_delivered  = scb->tx.delivered;
 		rs->prior_mstamp     = scb->tx.delivered_mstamp;
 		rs->is_app_limited   = scb->tx.is_app_limited;
@@ -139,10 +137,6 @@ void tcp_rate_gen(struct sock *sk, u32 delivered, u32 lost,
 		return;
 	}
 	rs->delivered   = tp->delivered - rs->prior_delivered;
-
-	rs->delivered_ce = tp->delivered_ce - rs->prior_delivered_ce;
-	/* delivered_ce occupies less than 32 bits in the skb control block */
-	rs->delivered_ce &= TCPCB_DELIVERED_CE_MASK;
 
 	/* Model sending data and receiving ACKs as separate pipeline phases
 	 * for a window. Usually the ACK phase is longer, but with ACK
