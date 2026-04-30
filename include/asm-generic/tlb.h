@@ -684,8 +684,8 @@ static inline void tlb_unshare_pmd_ptdesc(struct mmu_gather *tlb, struct page *p
 	 * The caller must make sure that concurrent unsharing + exclusive
 	 * reuse is impossible until tlb_flush_unshared_tables() was called.
 	 */
-	VM_WARN_ON_ONCE(!atomic_read(&pt->pt_share_count));
-	atomic_dec(&pt->pt_share_count);
+	VM_WARN_ON_ONCE(!page_count(pt));
+	put_page(pt);
 
 	/* Clearing a PUD pointing at a PMD table with PMD leaves. */
 	tlb_flush_pmd_range(tlb, addr & PUD_MASK, PUD_SIZE);
@@ -694,7 +694,7 @@ static inline void tlb_unshare_pmd_ptdesc(struct mmu_gather *tlb, struct page *p
 	 * If the page table is now exclusively owned, we fully unshared
 	 * a page table.
 	 */
-	if (!atomic_read(&pt->pt_share_count))
+	if (page_count(pt) == 1)
 		tlb->fully_unshared_tables = true;
 	tlb->unshared_tables = true;
 }

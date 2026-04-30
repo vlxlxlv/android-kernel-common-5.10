@@ -3868,7 +3868,7 @@ int copy_hugetlb_page_range(struct mm_struct *dst, struct mm_struct *src,
 
 #ifdef CONFIG_ARCH_WANT_HUGE_PMD_SHARE
 		/* If the pagetables are shared, there is nothing to do */
-		if (atomic_read(&virt_to_page(dst_pte)->pt_share_count))
+		if (page_count(virt_to_page(dst_pte)) > 1)
 			continue;
 #endif
 
@@ -5496,6 +5496,8 @@ int huge_pmd_unshare(struct mmu_gather *tlb, struct vm_area_struct *vma,
 	pud_t *pud = pud_offset(p4d, *addr);
 
 	i_mmap_assert_write_locked(vma->vm_file->f_mapping);
+	if (sz != PMD_SIZE)
+		return 0;
 	BUG_ON(page_count(virt_to_page(ptep)) == 0);
 	if (page_count(virt_to_page(ptep)) == 1)
 		return 0;
