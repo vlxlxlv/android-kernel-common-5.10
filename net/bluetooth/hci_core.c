@@ -1040,7 +1040,7 @@ static int hci_linkpol_req(struct hci_request *req, unsigned long opt)
 
 /* Get HCI device by index.
  * Device is held on return. */
-static struct hci_dev *__hci_dev_get(int index, int *srcu_index)
+struct hci_dev *hci_dev_get(int index)
 {
 	struct hci_dev *hdev = NULL, *d;
 
@@ -1053,29 +1053,11 @@ static struct hci_dev *__hci_dev_get(int index, int *srcu_index)
 	list_for_each_entry(d, &hci_dev_list, list) {
 		if (d->id == index) {
 			hdev = hci_dev_hold(d);
-			if (srcu_index)
-				*srcu_index = srcu_read_lock(&d->srcu);
 			break;
 		}
 	}
 	read_unlock(&hci_dev_list_lock);
 	return hdev;
-}
-
-struct hci_dev *hci_dev_get(int index)
-{
-	return __hci_dev_get(index, NULL);
-}
-
-static struct hci_dev *hci_dev_get_srcu(int index, int *srcu_index)
-{
-	return __hci_dev_get(index, srcu_index);
-}
-
-static void hci_dev_put_srcu(struct hci_dev *hdev, int srcu_index)
-{
-	srcu_read_unlock(&hdev->srcu, srcu_index);
-	hci_dev_put(hdev);
 }
 
 /* ---- Inquiry support ---- */
@@ -1924,9 +1906,9 @@ static int hci_dev_do_reset(struct hci_dev *hdev)
 int hci_dev_reset(__u16 dev)
 {
 	struct hci_dev *hdev;
-	int err, srcu_index;
+	int err;
 
-	hdev = hci_dev_get_srcu(dev, &srcu_index);
+	hdev = hci_dev_get(dev);
 	if (!hdev)
 		return -ENODEV;
 
@@ -1948,7 +1930,7 @@ int hci_dev_reset(__u16 dev)
 	err = hci_dev_do_reset(hdev);
 
 done:
-	hci_dev_put_srcu(hdev, srcu_index);
+	hci_dev_put(hdev);
 	return err;
 }
 
@@ -3614,11 +3596,6 @@ struct hci_dev *hci_alloc_dev(void)
 	if (!hdev)
 		return NULL;
 
-	if (init_srcu_struct(&hdev->srcu)) {
-		kfree(hdev);
-		return NULL;
-	}
-
 	hdev->pkt_type  = (HCI_DM1 | HCI_DH1 | HCI_HV1);
 	hdev->esco_type = (ESCO_HV1);
 	hdev->link_mode = (HCI_LM_ACCEPT);
@@ -3856,9 +3833,6 @@ void hci_unregister_dev(struct hci_dev *hdev)
 	write_lock(&hci_dev_list_lock);
 	list_del(&hdev->list);
 	write_unlock(&hci_dev_list_lock);
-
-	synchronize_srcu(&hdev->srcu);
-	cleanup_srcu_struct(&hdev->srcu);
 
 	cancel_work_sync(&hdev->rx_work);
 	cancel_work_sync(&hdev->cmd_work);
