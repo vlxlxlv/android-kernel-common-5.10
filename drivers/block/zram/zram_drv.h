@@ -2,7 +2,7 @@
  * Compressed RAM block device
  *
  * Copyright (C) 2008, 2009, 2010  Nitin Gupta
- *               2012, 2013 Minchan Kim
+ * 2012, 2013 Minchan Kim
  *
  * This code is released using a dual license strategy: BSD/GPL
  * You can choose the licence that better fits your requirements.
@@ -41,6 +41,11 @@
  */
 #define ZRAM_FLAG_SHIFT 24
 
+/* Tambahkan konstanta pendukung multi-kompresi */
+#define ZRAM_PRIMARY_COMP     0U
+#define ZRAM_SECONDARY_COMP   1U
+#define ZRAM_MAX_COMPS        4U
+
 /* Flags for zram pages (table[page_no].flags) */
 enum zram_pageflags {
 	/* zram slot is locked */
@@ -50,9 +55,14 @@ enum zram_pageflags {
 	ZRAM_UNDER_WB,	/* page is under writeback */
 	ZRAM_HUGE,	/* Incompressible page */
 	ZRAM_IDLE,	/* not accessed page since last idle marking */
-
+	ZRAM_RECOMP_PENDING,	/* page is pending for secondary compression */
+	ZRAM_INCOMPRESSIBLE,	/* page cannot be compressed further */
 	__NR_ZRAM_PAGEFLAGS,
 };
+
+/* Letakkan macro ini DI BAWAH enum agar __NR_ZRAM_PAGEFLAGS terbaca */
+#define ZRAM_COMP_PRIORITY_BIT1		(unsigned int)(__NR_ZRAM_PAGEFLAGS)
+#define ZRAM_COMP_PRIORITY_MASK		3
 
 /*-- Data structures */
 
@@ -70,10 +80,12 @@ struct zram_table_entry {
 
 struct zram_stats {
 	atomic64_t compr_data_size;	/* compressed size of pages stored */
-	atomic64_t num_reads;	/* failed + successful */
+	atomic64_t num_reads;
+	/* failed + successful */
 	atomic64_t num_writes;	/* --do-- */
 	atomic64_t failed_reads;	/* can happen when memory is too low */
-	atomic64_t failed_writes;	/* can happen when memory is too low */
+	atomic64_t failed_writes;
+	/* can happen when memory is too low */
 	atomic64_t invalid_io;	/* non-page-aligned I/O requests */
 	atomic64_t notify_free;	/* no. of swap slot free notifications */
 	atomic64_t same_pages;		/* no. of same element filled pages */
@@ -92,7 +104,13 @@ struct zram_stats {
 struct zram {
 	struct zram_table_entry *table;
 	struct zs_pool *mem_pool;
-	struct zcomp *comp;
+	
+	/* Mengubah struktur single comp menjadi array comps untuk multi-compression */
+	struct zcomp *comps[ZRAM_MAX_COMPS];
+	
+	/* INI YANG TERLEWAT: */
+	u32 num_active_comps;
+	
 	struct gendisk *disk;
 	/* Prevent concurrent execution of device init */
 	struct rw_semaphore init_lock;
@@ -107,11 +125,15 @@ struct zram {
 	 * we can store in a disk.
 	 */
 	u64 disksize;	/* bytes */
-	char compressor[CRYPTO_MAX_ALG_NAME];
+	
+	/* Mengubah string compressor menjadi array penampung algoritma */
+	const char *comp_algs[ZRAM_MAX_COMPS];
+	
 	/*
 	 * zram is claimed so open request will be failed
 	 */
-	bool claim; /* Protected by bdev->bd_mutex */
+	bool claim;
+	/* Protected by bdev->bd_mutex */
 	struct file *backing_dev;
 #ifdef CONFIG_ZRAM_WRITEBACK
 	spinlock_t wb_limit_lock;

@@ -15,18 +15,18 @@ config ZRAM
 	  See Documentation/admin-guide/blockdev/zram.rst for more information.
 
 config ZRAM_WRITEBACK
-       bool "Write back incompressible or idle page to backing device"
-       depends on ZRAM
-       help
-	 With incompressible page, there is no memory saving to keep it
-	 in memory. Instead, write it out to backing device.
-	 For this feature, admin should set up backing device via
-	 /sys/block/zramX/backing_dev.
+	bool "Write back incompressible or idle page to backing device"
+	depends on ZRAM
+	help
+	  With incompressible page, there is no memory saving to keep it
+	  in memory. Instead, write it out to backing device.
+	  For this feature, admin should set up backing device via
+	  /sys/block/zramX/backing_dev.
 
-	 With /sys/block/zramX/{idle,writeback}, application could ask
-	 idle page's writeback to the backing device to save in memory.
+	  With /sys/block/zramX/{idle,writeback}, application could ask
+	  idle page's writeback to the backing device to save in memory.
 
-	 See Documentation/admin-guide/blockdev/zram.rst for more information.
+	  See Documentation/admin-guide/blockdev/zram.rst for more information.
 
 config ZRAM_MEMORY_TRACKING
 	bool "Track zRam block status"
@@ -37,3 +37,30 @@ config ZRAM_MEMORY_TRACKING
 	  /sys/kernel/debug/zram/zramX/block_state.
 
 	  See Documentation/admin-guide/blockdev/zram.rst for more information.
+
+config ZRAM_DEF_COMP
+	string "Default compression algorithm"
+	depends on ZRAM
+	default "lzo-rle"
+	help
+	  This option sets the default compression algorithm for zram
+	  devices. It can be changed at runtime via /sys/block/zramX/comp_algorithm.
+
+config ZRAM_MULTI_COMP
+	bool "Enable multiple compression streams for ZRAM"
+	depends on ZRAM
+	help
+	  With this option, zram can use multiple compression
+	  algorithms (up to 4). A secondary algorithm can recompress
+	  idle or huge pages for better memory savings.
+
+	  Say Y if you want better ZRAM compression ratios via
+	  background recompression of idle pages.
+
+config ZRAM_DEF_RECOMP
+	string "Default secondary compression algorithm"
+	depends on ZRAM && ZRAM_MULTI_COMP
+	default "zstd"
+	help
+	  Default secondary (recompression) algorithm for ZRAM.
+	  zstd gives best ratio, lz4 gives better speed.
