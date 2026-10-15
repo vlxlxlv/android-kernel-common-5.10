@@ -67,7 +67,7 @@ config MQ_IOSCHED_SSG_CGROUP
 
 config CPQ_IOSCHED
 	tristate "cpq iosched"
-	default n
+	default y
 	help
 	  Command Priority Queueing i/o scheduler
 
