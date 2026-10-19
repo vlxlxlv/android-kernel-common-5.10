@@ -1796,6 +1796,20 @@ static const char *step_into(struct nameidata *nd, int flags,
 	   (flags & WALK_NOFOLLOW)) {
 		/* not a symlink or should not follow */
 		if (!(nd->flags & LOOKUP_RCU)) {
+			/*
+			 * Be careful in case the dentry is unlinked or renamed. Any mounts
+			 * stacked on top of it are going away. We need to make sure that we
+			 * don't reveal the underyling dentry during refwalk. In rcuwalk we
+			 * catch this via d_seq and another lookup for the name. Give the same
+			 * guarantee in refwalk.
+			 */
+			if (unlikely(!(flags & WALK_NOFOLLOW) &&
+				     !(nd->flags & LOOKUP_REVAL) &&
+				     path.mnt == nd->path.mnt &&
+				     cant_mount(dentry) && d_unlinked(dentry))) {
+				dput(path.dentry);
+				return ERR_PTR(-ESTALE);
+			}
 			dput(nd->path.dentry);
 			if (nd->path.mnt != path.mnt)
 				mntput(nd->path.mnt);
